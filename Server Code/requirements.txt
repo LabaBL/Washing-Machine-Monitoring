@@ -1,0 +1,6 @@
+serial
+requests
+pymongo
+sklearn
+pandas
+numpy

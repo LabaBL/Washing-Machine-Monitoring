@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
+        integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+
+    <title>Washing Machine Monitoring</title>
+</head>
+
+<body>
+    <h1 style="text-align: center;"><strong>Washing Machine Monitoring</strong></h1>
+    <h3 style="text-align: center;">Showcase of prototype as part of the Internet of Things and Applications course at
+        Auckland University of Technology.</h3>
+    <p>&nbsp;</p>
+    <p>&nbsp;</p>
+    <div id="machines" class="container" width="80%">
+    </div>
+
+    <!-- Optional JavaScript -->
+    <!-- jQuery first, then Popper.js, then Bootstrap JS -->
+    <script src="https://code.jquery.com/jquery-3.4.1.min.js"
+        integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=" crossorigin="anonymous">
+        </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"
+        integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1"
+        crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"
+        integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM"
+        crossorigin="anonymous"></script>
+
+    <script>
+        const list = [];
+
+        function get_img(status) {
+            switch (status) {
+                case "Not Connected":
+                    return "images/no_signal.png";
+                case "Free":
+                    return "images/free.png";
+                case "In Use":
+                    return "images/in_use.png";
+                case "Irregular Behavior":
+                    return "images/irregular_behavior.png";
+                case "Out of Order":
+                    return "images/out_of_order.png";
+                default:
+                // Do nothing
+            }
+        }
+
+        Element.prototype.insertChildAtIndex = function (child, index) {
+            if (!index) index = 0
+            if (index >= this.children.length) {
+                this.appendChild(child)
+            } else {
+                this.insertBefore(child, this.children[index])
+            }
+        }
+
+        function status_success(data, machineName, placeName, idx) {
+            var iDiv2 = document.getElementById("rows");
+
+            var machine_status = data["status"];
+            var timestamp = data["timestamp"];
+
+            var machineDiv = document.createElement("div");
+            machineDiv.id = machineName;
+            machineDiv.className = "col";
+
+            // Load machine status image
+            var img = new Image();
+            img.src = get_img(machine_status); //Load png by machine status
+            img.className = "card-img-top";
+
+            // Append divs
+            iDiv2.appendChild(machineDiv);
+            const card = document.createElement("div", { className: "card" });
+            card.style = "width: 14rem";
+            card.appendChild(img);
+            const cardBody = document.createElement("div", { className: "card-body" });
+            const cardText = document.createElement("p", { className: "card-text" });
+
+            const nameStatus = document.createElement("p");
+            const connection = document.createElement("p");
+            const location = document.createElement("p");
+            nameStatus.innerText = `${machineName}:\n${machine_status}`;
+            connection.innerText = `Last updated:\n${timestamp}`;
+            location.innerText = `${machineName} located at:\n${placeName}`;
+
+            cardText.appendChild(nameStatus);
+            cardText.appendChild(connection);
+            cardText.appendChild(location);
+
+            cardBody.appendChild(cardText);
+            card.appendChild(cardBody);
+            machineDiv.insertChildAtIndex(card, idx);
+        }
+
+        function machine_success(data) {
+            for (var i = 0; i < data.length; i++) {
+                var machine_id = data[i]["machine_id"];
+
+                const machineName = data[i]["name"];
+                const placeName = data[i]["place"];
+
+                var url = `http://ec2-54-206-59-70.ap-southeast-2.compute.amazonaws.com:3000/status?id=${machine_id}`;
+                fetch(url,
+                    {
+                        method: "GET",
+                        mode: 'cors',
+                        headers: { 'Content-Type': 'application/json' }
+                    })
+                    .then(function (response) {
+                        return response.json();
+                    })
+                    .then(function (myJson) {
+                        status_success(myJson, machineName, placeName, i)
+                    });
+            }
+        }
+
+        function load_machines() {
+            // Create row divs
+            var iDiv = document.getElementById("machines");
+
+            // Clear divs
+            for (var i = 0; i < iDiv.children.length; i++) {
+                iDiv.removeChild(iDiv.children[i]);
+            }
+
+            var iDiv2 = document.createElement("div");
+            iDiv2.id = "rows";
+            iDiv2.className = "row";
+            iDiv.appendChild(iDiv2);
+
+            // Dynamically create washing machines divs
+            fetch('http://ec2-54-206-59-70.ap-southeast-2.compute.amazonaws.com:3000/machines',
+                {
+                    method: "GET",
+                    mode: 'cors',
+                    headers: { 'Content-Type': 'application/json' }
+                })
+                .then(function (response) {
+                    return response.json();
+                })
+                .then(function (myJson) {
+                    machine_success(myJson)
+                });
+        }
+
+        // Keep updating page
+        load_machines();
+        setInterval(load_machines, 15000);
+    </script>
+</body>
+
+</html>
