@@ -2,7 +2,7 @@
   "name": "iot-washing-machine-server",
   "version": "1.0.0",
   "main": "app.js",
-  "repository": "https://github.com/LabaBL/",
+  "repository": "https://github.com/LabaBL/Washing-Machine-Monitoring",
   "description": "Code for project in Internet of Things and Applications at Auckland University of Technology.",
   "author": "Lauritz Baess-Lehmann <jrg2774@autuni.ac.nz>",
   "license": "MIT",
